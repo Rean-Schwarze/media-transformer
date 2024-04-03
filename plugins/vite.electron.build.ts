@@ -1,6 +1,5 @@
 import type {Plugin} from "vite";
 import fs from 'node:fs'
-import {json} from "node:stream/consumers";
 import * as electronBuilder from 'electron-builder';
 import * as path from "node:path";
 

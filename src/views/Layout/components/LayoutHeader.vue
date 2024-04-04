@@ -1,24 +1,22 @@
 <script setup lang="ts">
 import {Minus, Close} from '@element-plus/icons-vue';
+import * as electron from "electron";
 
-
-// function minimize(){
-//   ipcRenderer.send('minimize');
-// }
-// function close(){
-//   ipcRenderer.send('close');
-// }
 const minimize=()=>{
+  window.myApi.sendMsg('minimize');
+}
 
+const close=()=>{
+  window.myApi.sendMsg('close');
 }
 </script>
 
 <template>
   <div class="header">
     <el-row>
-      <el-col :span="2">
+      <el-col :span="22">
         <el-text size="large" type="primary">
-          标题
+          多媒体文件格式转换
         </el-text>
       </el-col>
       <el-col :span="1">
@@ -35,7 +33,7 @@ const minimize=()=>{
 <style scoped>
 .header{
   margin-left: 20px;
-  padding-top: 10px;
+  padding-top: 15px;
   margin-bottom: 10px;
 
   .button{

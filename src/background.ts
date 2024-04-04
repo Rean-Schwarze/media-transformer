@@ -9,6 +9,7 @@ app.whenReady().then(()=>{
     const { width, height } = primaryDisplay.workAreaSize
     const realWidth=width/1.5;
     const realHeight=height/1.5;
+    console.log(path.join(__dirname, 'preload.js'))
     const win=new BrowserWindow({
         width:realWidth,
         height:realHeight,
@@ -19,7 +20,7 @@ app.whenReady().then(()=>{
         // },
         webPreferences: {
             nodeIntegration:true, // 可以在渲染进程中使用node的api
-            contextIsolation:false, // 关闭渲染进程的沙箱
+            contextIsolation:true, // 关闭渲染进程的沙箱
             webSecurity:false, // 关闭CORS
             // 预加载脚本
             preload: path.join(__dirname, 'preload.js'),

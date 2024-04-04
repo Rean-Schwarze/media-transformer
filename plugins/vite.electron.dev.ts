@@ -14,6 +14,14 @@ const buildBackground=()=>{{
         target:'node12',
         external:['electron']
     })
+    require('esbuild').buildSync({
+        entryPoints:['src/preload.ts'],
+        bundle:true,
+        outfile:'dist/preload.js',
+        platform:'node',
+        target:'node12',
+        external:['electron']
+    })
 }}
 export const electronDevPlugin=():Plugin=>{
     return{

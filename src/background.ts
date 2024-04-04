@@ -13,6 +13,8 @@ app.whenReady().then(()=>{
     const win=new BrowserWindow({
         width:realWidth,
         height:realHeight,
+        resizable:false,
+        maximizable:false,
         // frame:false, // 无边框窗口
         titleBarStyle: 'hidden',
         // titleBarOverlay: {

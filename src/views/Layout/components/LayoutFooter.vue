@@ -40,7 +40,7 @@
     p {
       line-height: 1;
       padding-top: 10px;
-      font-family: "Harmony_Regular",sans-serif;
+      font-family: "PingFang SC",sans-serif;
       //padding-bottom: 20px;
       -webkit-app-region:no-drag;
     }

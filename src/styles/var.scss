@@ -1,5 +1,17 @@
-$xtxColor: #3391fe;
-$helpColor: #e26237;
-$sucColor: #1dc779;
-$warnColor: #ffb302;
-$priceColor: #cf4444;
+.el-text{
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei";
+}
+
+.el-menu-item{
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei";
+}
+
+// 浅色模式
+:root{
+  --el-text-color-regular: #303030;
+}
+
+// 深色模式
+html.dark{
+  --el-text-color-regular: #fff;
+}

@@ -27,7 +27,7 @@
   font-size:20px;
 }
 .welcome-title{
-  padding-top: 150px;
+  padding-top: 180px;
   margin: auto;
   text-align: center;
 }

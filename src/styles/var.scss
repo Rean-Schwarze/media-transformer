@@ -9,9 +9,11 @@
 // 浅色模式
 :root{
   --el-text-color-regular: #303030;
+  --el-text-color-secondary: #303030;
 }
 
 // 深色模式
 html.dark{
   --el-text-color-regular: #fff;
+  --el-text-color-secondary: #fff;
 }

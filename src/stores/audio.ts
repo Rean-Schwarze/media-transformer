@@ -27,13 +27,38 @@ export const useAudioStore=defineStore('audio',()=>{
     }
 
     const clearAudioTable=()=>{
-        audioTable.value=[]
+        audioTable.value.splice(0,audioTable.value.length)
+        ElMessage.success('清空成功！')
+    }
+
+    const deleteRow=(index:number, row:{title:string})=>{
+        let title=row.title
+        audioTable.value.splice(index,1)
+        ElMessage.warning('成功删除：'+title)
+    }
+
+    const setOptions=(index:number,option:{exportFormat:string,sample:string,bit:string,compress:number})=>{
+        const updateItem = (item: any) => {
+            item.exportFormat = option.exportFormat;
+            item.sample = option.sample;
+            item.bit = option.bit;
+            item.compress = option.compress;
+            return item;
+        };
+
+        if (index === -1) {
+            audioTable.value = audioTable.value.map(updateItem);
+        } else {
+            audioTable.value[index] = updateItem(audioTable.value[index]);
+        }
     }
 
     return{
         audioTable,
         addAudioTable,
-        clearAudioTable
+        clearAudioTable,
+        deleteRow,
+        setOptions
     }
 
 },{

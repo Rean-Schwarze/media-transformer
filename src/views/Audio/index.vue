@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { UploadFilled, VideoPlay, Delete, Position, Download, Setting} from '@element-plus/icons-vue'
+import {Delete, Download, Position, Setting, UploadFilled, VideoPlay} from '@element-plus/icons-vue'
 import {
   type UploadFile,
   type UploadFiles,
@@ -7,9 +7,11 @@ import {
   type UploadProps,
   type UploadUserFile,
 } from "element-plus";
-import {ref, onUnmounted} from 'vue'
+import {onUnmounted, ref, onMounted} from 'vue'
 import * as musicMetadata from 'music-metadata-browser';
 import {useAudioStore} from "@/stores/audio";
+import {FFmpeg} from "@ffmpeg/ffmpeg";
+import { fetchFile, toBlobURL } from '@ffmpeg/util'
 
 const uploadRef = ref<UploadInstance>()
 const audioList=ref<UploadUserFile[]>([])
@@ -18,6 +20,7 @@ const audioTable=audioStore.audioTable
 
 const allowedFileTypes = ['audio/mpeg', 'audio/wav', 'audio/flac', 'audio/x-m4a', 'audio/ogg'];
 
+onMounted(()=>initFFMpeg())
 onUnmounted(()=>audioStore.clearAudioTable())
 
 // 上传文件
@@ -34,7 +37,7 @@ const audioUpload=(uploadFile: UploadFile, uploadFiles: UploadFiles)=>{
 
 const handleExceed: UploadProps['onExceed'] = () => {
   ElMessage.warning(
-      "目前只能上传10个文件，请删除后重试"
+      "目前只能上传10个文件，请重试"
   )
 }
 
@@ -44,8 +47,23 @@ const handleRemove: UploadProps['onRemove']=(file, fileList)=>{
   )
 }
 
-const handleDelete=(index:number,row: { title:string })=>{
-  audioStore.deleteRow(index,row)
+const handleDelete=(index:number,row: { title:string,name:string })=>{
+  if(index===-1){
+    audioList.value=[]
+    audioStore.clearAudioTable()
+  }
+  else{
+    audioList.value=audioList.value.filter(obj=>obj.name!==row.name)
+    audioStore.deleteRow(index,row)
+  }
+}
+
+// 播放音频
+const audioRef=ref()
+const handlePlay=(index:number,row:{name:string})=>{
+  const raw:File=audioList.value.find(obj=>obj.name===row.name)?.raw
+  const blob=new Blob([raw],{type:raw.type})
+  audioRef.value.src=URL.createObjectURL(blob)
 }
 
 // 转换设置相关
@@ -82,57 +100,57 @@ const sampleRateOptions=[
 
 const mp3BitRateOptions=[
   {
-    value:'64',
+    value:'64k',
     label:'64 kbps',
   },
   {
-    value:'128',
+    value:'128k',
     label:'128 kbps',
   },
   {
-    value:'192',
+    value:'192k',
     label:'192 kbps',
   },
   {
-    value:'256',
+    value:'256k',
     label:'256 kbps',
   },
   {
-    value:'320',
+    value:'320k',
     label:'320 kbps',
   },
 ]
 
 const wavBitRateOptions=[
   {
-    value:'8',
+    value:'pcm_s8',
     label:'8 Bit',
   },
   {
-    value:'16',
+    value:'pcm_s16le',
     label:'16 Bit',
   },
   {
-    value:'24',
+    value:'pcm_s24le',
     label:'24 Bit',
   },
   {
-    value:'32',
+    value:'pcm_f32le',
     label:'32 Bit Float',
   },
 ]
 
 const flacBitRateOptions=[
   {
-    value:'16',
+    value:'s16',
     label:'16 Bit',
   },
   {
-    value:'24',
+    value:'s24',
     label:'24 Bit',
   },
   {
-    value:'32',
+    value:'s32',
     label:'32 Bit',
   },
 ]
@@ -160,12 +178,102 @@ const handleConfirm=()=>{
   dialogConfigVisible.value=false
 }
 
-import {FFmpeg} from "@ffmpeg/ffmpeg";
-import fs from "node:fs";
+// 转换相关
+const baseURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/esm/'
 const ffmpeg = new FFmpeg();
 ffmpeg.on('log', (e) => {
   console.log(e.message);
 });
+const initFFMpeg=async ()=>{
+  await ffmpeg.load({
+    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+    workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript')
+  })
+  ElMessage.success('FFMpeg 已加载')
+}
+
+const startProcess=async (index:number,row:{name:string, sample:string, exportFormat:string, bit:string, compress:number})=>{
+  const raw:File=audioList.value.find(obj=>obj.name===row.name)?.raw
+  await ffmpeg.writeFile(row.name, await fetchFile(raw))
+  const exportFormat=row.exportFormat
+  const exportName=row.name.split('.')[0]+'.'+exportFormat
+  if(exportFormat==='wav'){
+    await ffmpeg.exec(['-i',row.name,'-ar',row.sample,'-acodec',row.bit,exportName])
+  }
+  else if(exportFormat==='mp3'){
+    await ffmpeg.exec(['-i',row.name,'-ar',row.sample,'-ab',row.bit,exportName])
+  }
+  else if(exportFormat==='flac'){
+    await ffmpeg.exec(['-i',row.name,'-ar',row.sample,'-sample_fmt',row.bit,'-compression_level',row.compress.toString(),exportName])
+  }
+  const data=await ffmpeg.readFile(exportName)
+  const exportPath=URL.createObjectURL(new Blob([(data as Uint8Array).buffer],{type:'audio/wav'}))
+  audioStore.addExport(index,exportPath,exportName)
+}
+
+const handleProcess=async (index:number,row:{title:string,name:string, sample:string, exportFormat:string, bit:string, compress:number, exportPath:string})=>{
+  if(index===-1){
+    for (let i = 0; i < audioTable.length; i++) {
+      const currentRow = audioTable[i];
+      if (audioStore.checkOption(i)) {
+        ElMessage.error('输出格式尚未设置完毕！');
+      } else {
+        ElMessage.info(currentRow.title+' 开始转换，请耐心等候！');
+        await startProcess(i, currentRow);
+        ElMessage.success(currentRow.title+' 转换完成！');
+      }
+    }
+  }
+  else{
+    if(audioStore.checkOption(index)){
+      ElMessage.error('输出格式尚未设置完毕！')
+    }
+    else{
+      ElMessage.info(row.title+' 开始转换，请耐心等候！')
+      await startProcess(index, row)
+      ElMessage.success(row.title+' 转换完成！')
+      audioRef.value.src=row.exportPath
+    }
+  }
+}
+
+const startDownload=(index:number,row:{exportPath:string,exportName:string, title:string})=>{
+  if(typeof row.exportPath==='undefined'){
+    ElMessage.error(row.title+' 尚未执行转换！')
+  }
+  else{
+    // 创建一个隐藏的链接元素
+    const link = document.createElement('a');
+    link.style.display = 'none';
+
+    // 设置链接元素的 href 属性为 Blob URL
+    link.href = row.exportPath;
+
+    // 设置下载的文件名（可选）
+    link.download = row.exportName;
+
+    // 将链接元素添加到页面中
+    document.body.appendChild(link);
+
+    // 触发点击事件以开始下载
+    link.click();
+
+    // 移除链接元素
+    document.body.removeChild(link);
+  }
+}
+
+const handleDownload=(index:number,row:{exportPath:string,exportName:string})=>{
+  if(index===-1){
+    for (let i = 0; i < audioTable.length; i++) {
+      startDownload(i,audioTable[i])
+    }
+  }
+  else{
+    startDownload(index,row)
+  }
+}
 
 </script>
 
@@ -190,14 +298,15 @@ ffmpeg.on('log', (e) => {
     </el-upload>
 
     <div class="option">
-      <el-row>
+      <el-row justify="space-evenly">
         <el-col :span="3">
-          <el-button size="large" type="danger" :icon="Delete" @click="audioStore.clearAudioTable">
+          <el-button size="large" type="danger" :icon="Delete" @click="handleDelete(-1,{})">
             清空
           </el-button>
         </el-col>
-        <el-col :span="15">
-          <el-button>123345</el-button>
+        <el-col :span="11">
+          <audio ref="audioRef" controls autoplay style="height:40px; width:90%;">
+          </audio>
         </el-col>
         <el-col :span="3">
           <el-button size="large" type="info" :icon="Setting" @click="handleConfig(-1,{})">
@@ -205,8 +314,13 @@ ffmpeg.on('log', (e) => {
           </el-button>
         </el-col>
         <el-col :span="3">
-          <el-button size="large" type="primary" :icon="Position" @click="handleProcess(-1)">
+          <el-button size="large" type="primary" :icon="Position" @click="handleProcess(-1,{})">
             批量处理
+          </el-button>
+        </el-col>
+        <el-col :span="3">
+          <el-button size="large" type="primary" :icon="Download" @click="handleDownload(-1,{})">
+            批量下载
           </el-button>
         </el-col>
       </el-row>
@@ -228,7 +342,7 @@ ffmpeg.on('log', (e) => {
       <el-table-column label="操作" align="center">
         <template #default="scope">
           <el-button size="default" @click="handlePlay(scope.$index, scope.row)" :icon="VideoPlay"></el-button>
-          <el-button size="default" @click="handleConfig(scope.$index, scope.row)" :icon="Setting"></el-button>
+          <el-button size="default" type="info" @click="handleConfig(scope.$index, scope.row)" :icon="Setting"></el-button>
           <el-button
               size="default"
               type="primary" :icon="Position"
@@ -317,13 +431,13 @@ ffmpeg.on('log', (e) => {
   }
 
   .option{
-    padding-top: 5px;
+    padding-top: 10px;
     padding-left: 5px;
     -webkit-app-region:no-drag;
   }
 
   .table{
-    padding-top: 10px;
+    padding-top: 5px;
     -webkit-app-region:no-drag;
   }
 }

@@ -10,12 +10,13 @@ export const useAudioStore=defineStore('audio',()=>{
         const blob = new Blob([common?.picture?.[0].data], { type: 'image/jpeg' });
         // 创建一个 Blob URL
         const blobUrl = typeof common.picture==='undefined'?'':URL.createObjectURL(blob);
-        const audioMetadata:{album:string,artist:string,title:string,cover:string,type:string}= {
+        const audioMetadata:{album:string,artist:string,title:string,cover:string,type:string,name:string}= {
             album: common?.album,
             artist: common?.artist,
             title: typeof (common?.title) === 'undefined' ? name.split('.')[0] : common?.title,
             cover: blobUrl,
-            type: type==='mpeg'?'mp3':type
+            type: type==='mpeg'?'mp3':type,
+            name:name,
         }
         const isExists=audioTable.value.some(item=>item.album===audioMetadata.album && item.artist===audioMetadata.artist && item.title===audioMetadata.title)
         if(!isExists){
@@ -28,7 +29,7 @@ export const useAudioStore=defineStore('audio',()=>{
 
     const clearAudioTable=()=>{
         audioTable.value.splice(0,audioTable.value.length)
-        ElMessage.success('清空成功！')
+        ElMessage.success('列表已清空！')
     }
 
     const deleteRow=(index:number, row:{title:string})=>{
@@ -51,6 +52,23 @@ export const useAudioStore=defineStore('audio',()=>{
         } else {
             audioTable.value[index] = updateItem(audioTable.value[index]);
         }
+        ElMessage.success('设置成功！')
+    }
+
+    const addExport=(index:number,exportPath:string, exportName:string)=>{
+        audioTable.value[index].exportPath=exportPath
+        audioTable.value[index].exportName=exportName
+    }
+
+    const checkOption = (index: number) => {
+        if (index === -1) {
+            return audioTable.value.every(row => {
+                return typeof row.bit === 'undefined' || typeof row.exportFormat === 'undefined' || typeof row.sample === 'undefined' || (row.exportFormat === 'flac' && typeof row.compress === 'undefined');
+            });
+        } else {
+            const { exportFormat, sample, bit, compress } = audioTable.value[index] as { exportFormat: string, sample: string, bit: string, compress?: number };
+            return typeof bit === 'undefined' || typeof exportFormat === 'undefined' || typeof sample === 'undefined' || (exportFormat === 'flac' && typeof compress === 'undefined');
+        }
     }
 
     return{
@@ -58,7 +76,9 @@ export const useAudioStore=defineStore('audio',()=>{
         addAudioTable,
         clearAudioTable,
         deleteRow,
-        setOptions
+        setOptions,
+        checkOption,
+        addExport,
     }
 
 },{

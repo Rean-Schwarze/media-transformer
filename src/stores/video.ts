@@ -6,14 +6,20 @@ export const useVideoStore=defineStore('video',()=>{
     const videoTable:Ref<Object[]>=ref([])
 
     const addVideoTable=(name:string, type:string)=>{
+        const match=name.match(/(.*)\.[^.]+$/)
+        let shortType=''
+        if(type==='x-matroska') shortType='mkv'
+        else if(type==='quicktime') shortType='mov'
+        else shortType=type
         const videoData:{name:string, type:string, title:string}= {
-            type: type==='x-matroska'?'mkv':type || type==='quicktime'?'mov':type,
+            type: shortType,
             name:name,
-            title:name.split('.')[0],
+            title:match[1],
             resolution:'',
             frame:'',
             crf:18,
-            bit:1000
+            bit:1000,
+            status:'待设置输出格式'
         }
         const isExists=videoTable.value.some(item=>item.name===name)
         if(!isExists){
@@ -39,12 +45,13 @@ export const useVideoStore=defineStore('video',()=>{
         const updateItem = (item: any) => {
             item.exportFormat = option.exportFormat;
             item.mode=option.mode;
-            item.bit=option.bit
+            item.bit=option.bit.toString()+'k'
             item.resolution=option.resolution
             item.frame=option.frame
             item.transcodeMode=option.transcodeMode
             item.preset=option.preset
             item.crf=option.crf
+            item.status='待处理'
             return item;
         };
 
@@ -65,18 +72,30 @@ export const useVideoStore=defineStore('video',()=>{
         if (index === -1) {
             return videoTable.value.every(row => {
                 return typeof row.exportFormat === 'undefined'
-                    || (row.exportFormat!=='audio' && typeof row.mode==='undefined')
+                    || (row.exportFormat!=='aac' && typeof row.mode==='undefined')
                     || (row.mode==='transcode' && typeof row.transcodeMode==='undefined')
                     || (row.transcodeMode==='preset' && typeof row.preset==='undefined');
             });
         } else {
             const { exportFormat ,mode,transcodeMode,preset} = videoTable.value[index] as { exportFormat: string,mode:string,transcodeMode:string,preset:string};
-            return typeof exportFormat === 'undefined' || (exportFormat!=='audio' && typeof mode==='undefined')
+            return typeof exportFormat === 'undefined' || (exportFormat!=='aac' && typeof mode==='undefined')
                 || (mode==='transcodeMode' && typeof transcodeMode==='undefined')
                 || (transcodeMode==='preset' && typeof preset==='undefined');
         }
     }
 
+    const updateStatus=(index:number,status:string)=>{
+        const updateItem = (item: any) => {
+            item.status=status
+            return item;
+        };
+        if(index===-1){
+            videoTable.value = videoTable.value.map(updateItem);
+        }
+        else{
+            videoTable.value[index] = updateItem(videoTable.value[index]);
+        }
+    }
 
     return{
         videoTable,
@@ -86,6 +105,7 @@ export const useVideoStore=defineStore('video',()=>{
         setOptions,
         addExport,
         checkOption,
+        updateStatus,
     }
 },{
     persist:true,

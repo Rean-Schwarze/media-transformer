@@ -28,7 +28,7 @@ onUnmounted(()=>videoStore.clearVideoTable())
 const videoUpload=(uploadFile: UploadFile, uploadFiles: UploadFiles)=>{
   let type=uploadFile.raw?.type.split('/')[1]
   if (!allowedFileTypes.includes(uploadFile.raw?.type!)) {
-    if(uploadFile.raw?.name.split('.')[1]!=='flv'){
+    if(uploadFile.raw?.name.split('.')[-1]!=='flv'){
       uploadRef.value!.handleRemove(uploadFile);
       return
     }
@@ -65,6 +65,7 @@ const handleDelete=(index:number,row: { title:string,name:string })=>{
 // 播放相关
 const dialogVideoVisible=ref(false)
 const videoRef=ref()
+const audioRef=ref()
 const handlePlay=async (index:number,row:{name:string})=>{
   dialogVideoVisible.value=true
   const raw:File=videoList.value.find(obj=>obj.name===row.name)?.raw
@@ -79,7 +80,7 @@ const selectedOption=ref({exportFormat:'',mode:'',resolution:'',frame:'', bit:10
 
 const formatOptions=[
   {
-    value:'audio',
+    value:'aac',
     label:'抽取音频（复制）',
   },
   {
@@ -109,23 +110,23 @@ const sizeOption=[
     label:'与源相同'
   },
   {
-    value:'-1:480',
+    value:'854x480',
     label:'480p'
   },
   {
-    value:'-1:720',
+    value:'1280x720',
     label:'720p'
   },
   {
-    value:'-1:1080',
+    value:'1920x1080',
     label:'1080p'
   },
   {
-    value:'-1:1440',
+    value:'2560x1440',
     label:'2K'
   },
   {
-    value:'-1:2160',
+    value:'3840x2160',
     label:'4K'
   }
 ]
@@ -163,7 +164,7 @@ const transcodeOption=[
     label:'crf（恒定速率因子模式）'
   },
   {
-    value:'-b',
+    value:'-b:v',
     label:'固定比特率'
   }
 ]
@@ -208,7 +209,7 @@ const presetOption = [
 ];
 
 
-const handleConfig=(index:number,row:{exportFormat:string,mode:string,bit:number,resolution:string,frame:string,transcodeMode:string,preset:string,crf:number})=>{
+const handleConfig=(index:number,row:{exportFormat:string,mode:string,bit:any,resolution:string,frame:string,transcodeMode:string,preset:string,crf:number})=>{
   dialogConfigVisible.value=true
   selectedIndex.value=index
   if(index===-1){
@@ -217,7 +218,7 @@ const handleConfig=(index:number,row:{exportFormat:string,mode:string,bit:number
   else{
     selectedOption.value.exportFormat=row.exportFormat
     selectedOption.value.mode=row.mode
-    selectedOption.value.bit=row.bit
+    selectedOption.value.bit=typeof row.bit==='number'?row.bit:Number(row.bit.split('k')[0])
     selectedOption.value.resolution=row.resolution
     selectedOption.value.frame=row.frame
     selectedOption.value.transcodeMode=row.transcodeMode
@@ -231,7 +232,119 @@ const handleConfirm=()=>{
 }
 
 // 处理相关
+const startProcess=async (index:number,row:{name:string, exportFormat:string,mode:string,bit:number,resolution:string,frame:string,transcodeMode:string,preset:string,crf:number})=>{
+  const raw:File=videoList.value.find(obj=>obj.name===row.name)?.raw
+  await ffmpeg.writeFile(row.name, await fetchFile(raw))
+  const exportFormat=row.exportFormat
+  const exportName=row.name.split('.')[0]+'_processed.'+exportFormat
+  let type=''
+  // 抽取音频
+  if(exportFormat==='aac'){
+    await ffmpeg.exec(['-i',row.name,'-vn','-c:a','copy',exportName])
+    type='audio/wav'
+  }
+  else{
+    type='video/mp4'
+    if(row.mode==='transmux'){ // 封装
+      await ffmpeg.exec(['-i',row.name,'-c','copy',exportName])
+    }
+    else{ // 编码
+      let transcodeValue=undefined
+      if(row.transcodeMode==='-preset'){
+        transcodeValue=row.preset
+      }
+      else if(row.transcodeMode==='-crf'){
+        transcodeValue=row.crf.toString()
+      }
+      else if(row.transcodeMode==='-b:v'){
+        transcodeValue=row.bit.toString()
+      }
 
+      let ffOption=['-i',row.name]
+      if(row.frame!==''){
+        ffOption.push('-r',row.frame)
+      }
+      if(row.resolution!=''){
+        ffOption.push('-s',row.resolution)
+      }
+      ffOption.push(row.transcodeMode,transcodeValue,exportName)
+      await ffmpeg.exec(ffOption)
+    }
+  }
+  const data=await ffmpeg.readFile(exportName)
+  const exportPath=URL.createObjectURL(new Blob([(data as Uint8Array).buffer],{type:type}))
+  videoStore.addExport(index,exportPath,exportName)
+}
+
+const handleProcess=async (index:number,row:{title:string,name:string, sample:string, exportFormat:string, bit:string, compress:number, exportPath:string})=>{
+  if(index===-1){
+    for (let i = 0; i < audioTable.length; i++) {
+      const currentRow = videoTable[i];
+      if (videoStore.checkOption(i)) {
+        ElMessage.error('输出格式尚未设置完毕！');
+      } else {
+        ElMessage.info(currentRow.title+' 开始转换，请耐心等候！');
+        videoStore.updateStatus(i,'处理中')
+        await startProcess(i, currentRow);
+        videoStore.updateStatus(i,'处理完毕')
+        ElMessage.success(currentRow.title+' 转换完成！');
+      }
+    }
+  }
+  else{
+    if(videoStore.checkOption(index)){
+      ElMessage.error('输出格式尚未设置完毕！')
+    }
+    else{
+      ElMessage.info(row.title+' 开始转换，请耐心等候！')
+      videoStore.updateStatus(index,'处理中')
+      await startProcess(index, row)
+      videoStore.updateStatus(index,'处理完毕')
+      ElMessage.success(row.title+' 转换完成！')
+      if(row.exportFormat==='aac'){
+        audioRef.value.src=row.exportPath
+      }
+    }
+  }
+}
+
+// 下载
+const startDownload=(index:number,row:{exportPath:string,exportName:string, title:string})=>{
+  if(typeof row.exportPath==='undefined'){
+    ElMessage.error(row.title+' 尚未执行转换！')
+  }
+  else{
+    // 创建一个隐藏的链接元素
+    const link = document.createElement('a');
+    link.style.display = 'none';
+
+    // 设置链接元素的 href 属性为 Blob URL
+    link.href = row.exportPath;
+
+    // 设置下载的文件名（可选）
+    link.download = row.exportName;
+
+    // 将链接元素添加到页面中
+    document.body.appendChild(link);
+
+    // 触发点击事件以开始下载
+    link.click();
+
+    // 移除链接元素
+    document.body.removeChild(link);
+  }
+}
+
+const handleDownload=(index:number,row:{exportPath:string,exportName:string})=>{
+  if(index===-1){
+    for (let i = 0; i < videoTable.length; i++) {
+      startDownload(i,videoTable[i])
+    }
+  }
+  else{
+    startDownload(index,row)
+  }
+}
 </script>
 
 <template>
@@ -291,6 +404,7 @@ const handleConfirm=()=>{
       <el-table-column prop="title" label="文件名" align="center"/>
       <el-table-column prop="type" label="格式" align="center"/>
       <el-table-column prop="exportFormat" label="输出格式" align="center"/>
+      <el-table-column prop="status" label="处理状态" align="center"/>
       <el-table-column label="操作" align="center">
         <template #default="scope">
           <div class="table-button">
@@ -327,7 +441,7 @@ const handleConfirm=()=>{
         <el-option v-for="item in formatOptions" :key="item.value" :label="item.label" :value="item.value" />
       </el-select>
     </div>
-    <div :class="selectedOption.exportFormat!=='audio'?'dialog-row':'dialog-row-hidden'">
+    <div :class="selectedOption.exportFormat!=='aac'?'dialog-row':'dialog-row-hidden'">
       <el-text style="display:inline-flex; width:80px; padding-left: 15px;">
         转换模式
       </el-text>
@@ -335,14 +449,14 @@ const handleConfirm=()=>{
         <el-option v-for="item in modeOption" :key="item.value" :label="item.label" :value="item.value" />
       </el-select>
     </div>
-    <div :class="selectedOption.mode==='transcode'?'dialog-row':'dialog-row-hidden'">
-      <el-text style="display:inline-flex; width:80px; padding-left: 15px;">
-        分辨率
-      </el-text>
-      <el-select v-model="selectedOption.resolution" placeholder="分辨率" size="large" style="width:200px; padding-left: 25px;">
-        <el-option v-for="item in sizeOption" :key="item.value" :label="item.label" :value="item.value" />
-      </el-select>
-    </div>
+<!--    <div :class="selectedOption.mode==='transcode'?'dialog-row':'dialog-row-hidden'">-->
+<!--      <el-text style="display:inline-flex; width:80px; padding-left: 15px;">-->
+<!--        分辨率-->
+<!--      </el-text>-->
+<!--      <el-select v-model="selectedOption.resolution" placeholder="分辨率" size="large" style="width:200px; padding-left: 25px;">-->
+<!--        <el-option v-for="item in sizeOption" :key="item.value" :label="item.label" :value="item.value" />-->
+<!--      </el-select>-->
+<!--    </div>-->
     <div :class="selectedOption.mode==='transcode'?'dialog-row':'dialog-row-hidden'">
       <el-text style="display:inline-flex; width:80px; padding-left: 15px;">
         帧率
@@ -373,7 +487,7 @@ const handleConfirm=()=>{
       </el-text>
       <el-slider v-model="selectedOption.crf" :step=1 :min=18 :max=28 style="padding-left:25px; width:200px;"/>
     </div>
-    <div :class="selectedOption.transcodeMode==='-b'?'dialog-row-slider':'dialog-row-hidden'">
+    <div :class="selectedOption.transcodeMode==='-b:v'?'dialog-row-slider':'dialog-row-hidden'">
       <el-text style="display:inline-flex; width:80px; padding-left: 15px;">
         比特率(kbps)
       </el-text>

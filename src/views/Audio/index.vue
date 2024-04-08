@@ -62,9 +62,9 @@ const handleDelete=(index:number,row: { title:string,name:string })=>{
 
 // 播放音频
 const audioRef=ref()
-const handlePlay=(index:number,row:{name:string})=>{
+const handlePlay=async (index:number,row:{name:string})=>{
   const raw:File=audioList.value.find(obj=>obj.name===row.name)?.raw
-  const blob=new Blob([raw],{type:raw.type})
+  const blob=await new Blob([raw],{type:raw.type})
   audioRef.value.src=URL.createObjectURL(blob)
 }
 

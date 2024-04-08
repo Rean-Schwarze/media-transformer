@@ -29,7 +29,7 @@ export const useAudioStore=defineStore('audio',()=>{
 
     const clearAudioTable=()=>{
         audioTable.value.splice(0,audioTable.value.length)
-        ElMessage.success('列表已清空！')
+        ElMessage.success('音频列表已清空！')
     }
 
     const deleteRow=(index:number, row:{title:string})=>{

@@ -7,10 +7,10 @@ import {
   type UploadProps,
   type UploadUserFile,
 } from "element-plus";
-import {onUnmounted, ref, onMounted} from 'vue'
+import {onUnmounted, ref} from 'vue'
 import * as musicMetadata from 'music-metadata-browser';
 import {useAudioStore} from "@/stores/audio";
-import {FFmpeg} from "@ffmpeg/ffmpeg";
+import {useFFMpegStore} from '@/stores/ffmpegStore'
 import { fetchFile, toBlobURL } from '@ffmpeg/util'
 
 const uploadRef = ref<UploadInstance>()
@@ -20,7 +20,9 @@ const audioTable=audioStore.audioTable
 
 const allowedFileTypes = ['audio/mpeg', 'audio/wav', 'audio/flac', 'audio/x-m4a', 'audio/ogg'];
 
-onMounted(()=>initFFMpeg())
+const ffmpegStore=useFFMpegStore()
+const ffmpeg=ffmpegStore.ffmpeg
+
 onUnmounted(()=>audioStore.clearAudioTable())
 
 // 上传文件
@@ -179,20 +181,6 @@ const handleConfirm=()=>{
 }
 
 // 转换相关
-const baseURL = 'https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/esm/'
-const ffmpeg = new FFmpeg();
-ffmpeg.on('log', (e) => {
-  console.log(e.message);
-});
-const initFFMpeg=async ()=>{
-  await ffmpeg.load({
-    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-    workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript')
-  })
-  ElMessage.success('FFMpeg 已加载')
-}
-
 const startProcess=async (index:number,row:{name:string, sample:string, exportFormat:string, bit:string, compress:number})=>{
   const raw:File=audioList.value.find(obj=>obj.name===row.name)?.raw
   await ffmpeg.writeFile(row.name, await fetchFile(raw))
@@ -341,23 +329,27 @@ const handleDownload=(index:number,row:{exportPath:string,exportName:string})=>{
       <el-table-column prop="exportFormat" label="输出格式" align="center"/>
       <el-table-column label="操作" align="center">
         <template #default="scope">
-          <el-button size="default" @click="handlePlay(scope.$index, scope.row)" :icon="VideoPlay"></el-button>
-          <el-button size="default" type="info" @click="handleConfig(scope.$index, scope.row)" :icon="Setting"></el-button>
-          <el-button
-              size="default"
-              type="primary" :icon="Position"
-              @click="handleProcess(scope.$index, scope.row)"
-          ></el-button>
-          <el-button
-              size="default"
-              type="primary" :icon="Download"
-              @click="handleDownload(scope.$index, scope.row)"
-          ></el-button>
-          <el-button
-              size="default"
-              type="danger" :icon="Delete"
-              @click="handleDelete(scope.$index, scope.row)"
-          ></el-button>
+          <div class="table-button">
+            <el-button size="default" @click="handlePlay(scope.$index, scope.row)" :icon="VideoPlay"></el-button>
+            <el-button size="default" type="info" @click="handleConfig(scope.$index, scope.row)" :icon="Setting"></el-button>
+          </div>
+          <div class="table-button">
+            <el-button
+                size="default"
+                type="primary" :icon="Position"
+                @click="handleProcess(scope.$index, scope.row)"
+            ></el-button>
+            <el-button
+                size="default"
+                type="primary" :icon="Download"
+                @click="handleDownload(scope.$index, scope.row)"
+            ></el-button>
+            <el-button
+                size="default"
+                type="danger" :icon="Delete"
+                @click="handleDelete(scope.$index, scope.row)"
+            ></el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -439,6 +431,11 @@ const handleDownload=(index:number,row:{exportPath:string,exportName:string})=>{
   .table{
     padding-top: 5px;
     -webkit-app-region:no-drag;
+  }
+
+  .table-button{
+    padding-top: 10px;
+    margin:auto;
   }
 }
 

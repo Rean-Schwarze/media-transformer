@@ -219,6 +219,7 @@ const handleConfig=(index:number,row:{exportFormat:string,mode:string,bit:number
     selectedOption.value.mode=row.mode
     selectedOption.value.bit=row.bit
     selectedOption.value.resolution=row.resolution
+    selectedOption.value.frame=row.frame
     selectedOption.value.transcodeMode=row.transcodeMode
     selectedOption.value.preset=row.preset
     selectedOption.value.crf=row.crf
@@ -370,13 +371,13 @@ const handleConfirm=()=>{
       <el-text style="display:inline-flex; width:80px; padding-left: 15px;">
         crf
       </el-text>
-      <el-slider v-model="selectedOption.crf" :step="1" :min="18" :max="28" style="padding-left:25px; width:200px;"/>
+      <el-slider v-model="selectedOption.crf" :step=1 :min=18 :max=28 style="padding-left:25px; width:200px;"/>
     </div>
     <div :class="selectedOption.transcodeMode==='-b'?'dialog-row-slider':'dialog-row-hidden'">
       <el-text style="display:inline-flex; width:80px; padding-left: 15px;">
         比特率(kbps)
       </el-text>
-      <el-input-number v-model="selectedOption.bit" :step="500" min="1000" max="12000" controls-position="right"
+      <el-input-number v-model="selectedOption.bit" :step=500 :min=1000 :max=12000 controls-position="right"
                        size="large" style="padding-left:25px; width:200px;" />
     </div>
 
@@ -388,7 +389,7 @@ const handleConfirm=()=>{
 
 <!--  播放视频Dialog-->
   <el-dialog v-model="dialogVideoVisible">
-    <video ref="videoRef" controls autoplay style="height:100%; width:100%; padding-top:10px;">
+    <video ref="videoRef" controls autoplay style="height:100%; width:100%; padding-top:10px;" class="dialog-video">
     </video>
   </el-dialog>
 </template>
@@ -434,5 +435,9 @@ const handleConfirm=()=>{
 
 .dialog-row-hidden{
   display:none;
+}
+
+.dialog-video{
+  -webkit-app-region:no-drag;
 }
 </style>

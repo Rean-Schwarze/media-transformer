@@ -404,7 +404,7 @@ const handleDownload=(index:number,row:{exportPath:string,exportName:string})=>{
       <el-text style="display:inline-flex; width:80px; padding-left: 15px;">
         压缩
       </el-text>
-      <el-slider v-model="selectedOption.compress" :step="1" :max="8" style="padding-left:25px; width:200px;" />
+      <el-slider v-model="selectedOption.compress" :step=1 :max=8 style="padding-left:25px; width:200px;" />
     </div>
 
     <template #footer>

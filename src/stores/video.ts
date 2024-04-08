@@ -9,7 +9,11 @@ export const useVideoStore=defineStore('video',()=>{
         const videoData:{name:string, type:string, title:string}= {
             type: type==='x-matroska'?'mkv':type || type==='quicktime'?'mov':type,
             name:name,
-            title:name.split('.')[0]
+            title:name.split('.')[0],
+            resolution:'',
+            frame:'',
+            crf:18,
+            bit:1000
         }
         const isExists=videoTable.value.some(item=>item.name===name)
         if(!isExists){

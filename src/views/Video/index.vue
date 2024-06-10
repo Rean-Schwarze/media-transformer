@@ -7,7 +7,7 @@ import {
   type UploadProps,
   type UploadUserFile,
 } from "element-plus";
-import {onUnmounted, ref} from 'vue'
+import {onMounted, ref} from 'vue'
 import {useVideoStore} from "@/stores/video";
 import {useFFMpegStore} from '@/stores/ffmpegStore'
 import { fetchFile, toBlobURL } from '@ffmpeg/util'
@@ -22,7 +22,7 @@ const allowedFileTypes = ['video/mp4', 'video/quicktime', 'video/x-matroska'];
 const ffmpegStore=useFFMpegStore()
 const ffmpeg=ffmpegStore.ffmpeg
 
-onUnmounted(()=>videoStore.clearVideoTable())
+onMounted(()=>videoStore.clearVideoTable())
 
 // 上传相关
 const videoUpload=(uploadFile: UploadFile, uploadFiles: UploadFiles)=>{

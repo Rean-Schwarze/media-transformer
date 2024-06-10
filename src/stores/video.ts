@@ -14,7 +14,7 @@ export const useVideoStore=defineStore('video',()=>{
         const videoData:{name:string, type:string, title:string}= {
             type: shortType,
             name:name,
-            title:match[1],
+            title:match?.[1],
             resolution:'',
             frame:'',
             crf:18,
@@ -31,8 +31,10 @@ export const useVideoStore=defineStore('video',()=>{
     }
 
     const clearVideoTable=()=>{
-        videoTable.value.splice(0,videoTable.value.length)
-        ElMessage.success('视频列表已清空！')
+        if(videoTable.value.length>0){
+            videoTable.value.splice(0,videoTable.value.length)
+            ElMessage.success('视频列表已清空！')
+        }
     }
 
     const deleteRow=(index:number, row:{name:string})=>{

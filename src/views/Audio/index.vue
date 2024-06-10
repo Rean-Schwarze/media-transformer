@@ -7,7 +7,7 @@ import {
   type UploadProps,
   type UploadUserFile,
 } from "element-plus";
-import {onUnmounted, ref} from 'vue'
+import {onMounted, ref} from 'vue'
 import * as musicMetadata from 'music-metadata-browser';
 import {useAudioStore} from "@/stores/audio";
 import {useFFMpegStore} from '@/stores/ffmpegStore'
@@ -23,7 +23,7 @@ const allowedFileTypes = ['audio/mpeg', 'audio/wav', 'audio/flac', 'audio/x-m4a'
 const ffmpegStore=useFFMpegStore()
 const ffmpeg=ffmpegStore.ffmpeg
 
-onUnmounted(()=>audioStore.clearAudioTable())
+onMounted(()=>audioStore.clearAudioTable())
 
 // 上传文件
 const audioUpload=(uploadFile: UploadFile, uploadFiles: UploadFiles)=>{

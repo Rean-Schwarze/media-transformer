@@ -278,7 +278,7 @@ const startProcess=async (index:number,row:{name:string, exportFormat:string,mod
 
 const handleProcess=async (index:number,row:{title:string,name:string, sample:string, exportFormat:string, bit:string, compress:number, exportPath:string})=>{
   if(index===-1){
-    for (let i = 0; i < audioTable.length; i++) {
+    for (let i = 0; i < videoTable.length; i++) {
       const currentRow = videoTable[i];
       if (videoStore.checkOption(i)) {
         ElMessage.error('输出格式尚未设置完毕！');

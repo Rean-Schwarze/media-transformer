@@ -72,6 +72,10 @@ const handlePlay=async (index:number,row:{name:string})=>{
   const blob=await new Blob([raw],{type:'video/mp4'})
   videoRef.value.src=URL.createObjectURL(blob)
 }
+const handleClose=()=>{
+  dialogVideoVisible.value=false
+  videoRef.value.pause()
+}
 
 // 设置相关
 const dialogConfigVisible=ref(false)
@@ -502,8 +506,8 @@ const handleDownload=(index:number,row:{exportPath:string,exportName:string})=>{
   </el-dialog>
 
 <!--  播放视频Dialog-->
-  <el-dialog v-model="dialogVideoVisible">
-    <video ref="videoRef" controls autoplay style="height:100%; width:100%; padding-top:10px;" class="dialog-video">
+  <el-dialog v-model="dialogVideoVisible" title="视频预览" width="1000px" :before-close="handleClose" style="-webkit-app-region:no-drag;">
+    <video ref="videoRef" controls autoplay style="height:100%; width:100%;">
     </video>
   </el-dialog>
 </template>

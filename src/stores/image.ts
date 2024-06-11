@@ -30,10 +30,14 @@ export const useImageStore=defineStore('image',()=>{
 
     const addImageTable=async (raw: File) => {
         let match = raw?.name.match(/(.*)\.[^.]+$/)
-        let name=match?.[1]
-        if(name.length>maxLength){
+        let fullName=match?.[1]
+        let name: string | undefined =""
+        if(fullName.length>maxLength){
             const regex = new RegExp(`(.{1,${maxLength}})`, 'g');
-            name=name?.match(regex)?.[0]+'...'
+            name=fullName?.match(regex)?.[0]+'...'
+        }
+        else{
+            name=fullName
         }
         let type = raw?.type.split('/')[1]
         let size = raw?.size
@@ -61,6 +65,7 @@ export const useImageStore=defineStore('image',()=>{
         resolution=width+' x '+height
         const imageData = {
             src: blobUrl,
+            fullName:fullName,
             name: name,
             type: type,
             resolution: resolution,
@@ -69,7 +74,7 @@ export const useImageStore=defineStore('image',()=>{
             size: sizeString,
             raw:raw,
         }
-        const isExists = imageTable.value.some(item => item.name === name)
+        const isExists = imageTable.value.some(item => item.name === fullName)
         if (!isExists) {
             imageTable.value.push(imageData)
         } else {
@@ -104,6 +109,7 @@ export const useImageStore=defineStore('image',()=>{
             item.exportFormat = option.exportFormat;
             item.newWidth=option.newWidth;
             item.newHeight=option.newHeight;
+            item.exportName=item.fullName+'.'+option.exportFormat;
             return item;
         };
 
@@ -126,6 +132,10 @@ export const useImageStore=defineStore('image',()=>{
         }
     }
 
+    const addExport=(index:number,path:string)=>{
+        imageTable.value[index].exportPath=path
+    }
+
     return {
         imageTable,
         addImageTable,
@@ -133,7 +143,8 @@ export const useImageStore=defineStore('image',()=>{
         deleteRow,
         getMaxResolution,
         setOptions,
-        checkOption
+        checkOption,
+        addExport
     }
 
 },{

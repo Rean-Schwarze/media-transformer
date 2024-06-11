@@ -7,11 +7,9 @@ import {
   type UploadInstance,
   type UploadProps,
   type UploadUserFile,
-  type UploadRawFile,
 } from "element-plus";
 import {onMounted, ref} from 'vue'
 import {useImageStore} from "@/stores/image";
-import sharp from "sharp";
 
 const uploadRef = ref<UploadInstance>()
 const imageList=ref<UploadUserFile[]>([])
@@ -22,7 +20,7 @@ const allowedFileTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/bmp'];
 
 onMounted(()=>imageStore.clearImageTable())
 
-const getStyle=(row)=> {
+const getStyle=(row:{width:number,height:number})=> {
   const maxWidth = 180;
   const maxHeight = 180;
   let width = row.width;
@@ -45,11 +43,12 @@ const getStyle=(row)=> {
   };
 }
 
-const handleBeforeUpload:UploadProps['beforeUpload']=(raw:UploadRawFile)=>{
-
-}
-
 const imageUpload=(uploadFile: UploadFile, uploadFiles: UploadFiles)=>{
+  let sizeInMB = uploadFile.raw?.size! / 1024 / 1024;
+  if(sizeInMB>20){
+    ElMessage.error("上传文件大小需 <= 20 MB！")
+    return
+  }
   if (!allowedFileTypes.includes(uploadFile.raw?.type!)) {
     uploadRef.value!.handleRemove(uploadFile);
   }
@@ -89,7 +88,7 @@ const selectedOption=ref({exportFormat:'',width:1,height:1,newWidth:1,newHeight:
 
 const formatOptions=[
   {
-    value:'jpg',
+    value:'jpeg',
     label:'jpg/jpeg',
   },
   {
@@ -102,7 +101,7 @@ const formatOptions=[
   }
 ]
 
-const handleConfig=(index:number,row)=>{
+const handleConfig=(index:number,row:{exportFormat:string,width:number,height:number})=>{
   dialogConfigVisible.value=true
   selectedIndex.value=index
   if(index===-1) {
@@ -126,16 +125,55 @@ const handleConfirm=()=>{
 // 图片预览
 const dialogPreviewVisible=ref(false)
 const dialogImageUrl=ref('')
-const handlePreview=(index:number,row)=>{
+const handlePreview=(index:number,row:{src:string})=>{
   dialogImageUrl.value=row.src
   dialogPreviewVisible.value=true
 }
 
 // 处理相关
-const startProcess=async (index:number,row)=>{
-  console.log(123)
+/**
+ * 根据 jpeg、png 的 File 文件对象，获取 指定输出格式 的 File 文件对象
+ * @param {File} imageFile jpeg、png图片文件对象
+ * @param {string} newType 输出格式
+ * @returns image/newType File
+ */
+const convertImage = (imageFile:File,newType:string,newWidth:number,newHeight:number) => {
+  const base64ToFile = (base64, fileName:string) => {
+    let arr = base64.split(','),
+        type = arr[0].match(/:(.*?);/)[1],
+        bstr = atob(arr[1]),
+        n = bstr.length,
+        u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], fileName, {
+      type
+    });
+  };
+  return new Promise((resolve, reject) => {
+    const imageFileReader = new FileReader();
+    imageFileReader.onload = function(e) {
+      const image = new Image();
+      typeof e.target.result === "string" ? image.src = e.target.result :"";
+      image.onload = function() {
+        const canvas = document.createElement("canvas");
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+        canvas.getContext("2d")?.drawImage(image, 0, 0,newWidth,newHeight);
+        resolve(base64ToFile(canvas.toDataURL("image/"+newType), imageFile.name.split(".")[0] + "."+newType))
+      }
+    }
+    imageFileReader.readAsDataURL(imageFile)
+  });
 }
-const handleProcess=(index:number,row)=>{
+
+const startProcess=async (index:number,row:{exportFormat:string,raw:File,newWidth:number,newHeight:number})=>{
+  const exportFile=await convertImage(row.raw,row.exportFormat,row.newWidth,row.newHeight)
+  imageStore.addExport(index,URL.createObjectURL(new Blob([exportFile],{type:"image/"+row.exportFormat})))
+}
+
+const handleProcess=async (index:number,row:{exportFormat:string,raw:File,newWidth:number,newHeight:number})=>{
   if(index===-1){
     for (let i = 0; i < imageTable.length; i++) {
       const currentRow = imageTable[i];
@@ -143,7 +181,7 @@ const handleProcess=(index:number,row)=>{
         ElMessage.error('输出格式尚未设置完毕！');
       }
       else{
-
+        await startProcess(i,currentRow)
       }
     }
   }
@@ -152,8 +190,47 @@ const handleProcess=(index:number,row)=>{
       ElMessage.error('输出格式尚未设置完毕！')
     }
     else{
-
+      await startProcess(index,row)
     }
+  }
+  ElMessage.success("转换完成！")
+}
+
+// 下载相关
+const startDownload=(index:number,row:{exportPath:string,exportName:string,name:string})=>{
+  if(typeof row.exportPath==='undefined'){
+    ElMessage.error(row.name+' 尚未执行转换！')
+  }
+  else{
+    // 创建一个隐藏的链接元素
+    const link = document.createElement('a');
+    link.style.display = 'none';
+
+    // 设置链接元素的 href 属性为 Blob URL
+    link.href = row.exportPath;
+
+    // 设置下载的文件名（可选）
+    link.download = row.exportName;
+
+    // 将链接元素添加到页面中
+    document.body.appendChild(link);
+
+    // 触发点击事件以开始下载
+    link.click();
+
+    // 移除链接元素
+    document.body.removeChild(link);
+  }
+}
+
+const handleDownload=(index:number,row:{exportPath:string,exportName:string,name:string})=>{
+  if(index===-1){
+    for (let i = 0; i < imageTable.length; i++) {
+      startDownload(i,imageTable[i])
+    }
+  }
+  else{
+    startDownload(index,row)
   }
 }
 
@@ -171,7 +248,6 @@ const handleProcess=(index:number,row)=>{
         :limit="10"
         v-model:file-list="imageList"
         :auto-upload="false"
-        :before-upload="handleBeforeUpload"
         :on-exceed="handleExceed"
         :show-file-list="false"
     >

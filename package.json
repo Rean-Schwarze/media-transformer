@@ -10,12 +10,15 @@
     "type-check": "vue-tsc --build --force"
   },
   "dependencies": {
+    "@rollup/plugin-inject": "^5.0.5",
     "@vueuse/core": "^10.9.0",
+    "buffer": "^6.0.3",
     "element-plus": "^2.6.3",
     "esbuild": "^0.20.2",
     "pinia": "^2.1.7",
     "pinia-plugin-persistedstate": "^3.2.1",
     "pubsub-js": "^1.9.4",
+    "sharp": "^0.33.4",
     "vite": "^5.2.8",
     "vite-plugin-ngmi-polyfill": "^0.0.2",
     "vue": "^3.4.21",
@@ -36,7 +39,6 @@
     "electron-builder": "^24.13.3",
     "electron-builder-squirrel-windows": "^25.0.0-alpha.5",
     "esbuild": "^0.20.2",
-    "lodash": "^4.17.21",
     "music-metadata-browser": "^2.5.10",
     "npm-run-all2": "^6.1.2",
     "pubsub-js": "^1.9.4",

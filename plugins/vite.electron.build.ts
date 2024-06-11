@@ -43,7 +43,7 @@ export const electronBuildPlugin=():Plugin=>{
                         output:path.resolve(process.cwd(),'release'),
                         app:path.resolve(process.cwd(),'dist'),
                     },
-                    // files:['**/*'],
+                    files:['**/*'],
                     asar:true, // 压缩
                     // appId:'com.example.app',
                     productName:'media-transformer',

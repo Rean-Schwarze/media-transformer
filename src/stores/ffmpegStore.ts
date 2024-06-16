@@ -13,9 +13,9 @@ export const useFFMpegStore=defineStore('ffmpeg',()=>{
         });
 
         await ffmpeg.load({
-            coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-            wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-            workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, 'text/javascript')
+            coreURL: await toBlobURL(`./ffmpeg-core.js`, 'text/javascript'),
+            wasmURL: await toBlobURL(`./ffmpeg-core.wasm`, 'application/wasm'),
+            workerURL: await toBlobURL(`./ffmpeg-core.worker.js`, 'text/javascript')
         })
         ElMessage.success('FFMpeg 已加载')
     }

@@ -114,7 +114,9 @@ export const useImageStore=defineStore('image',()=>{
         };
 
         if (index === -1) {
-            imageTable.value = imageTable.value.map(updateItem);
+            imageTable.value.forEach((item,index)=>{
+                imageTable.value[index]=updateItem(item)
+            })
         } else {
             imageTable.value[index] = updateItem(imageTable.value[index]);
         }

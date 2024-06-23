@@ -50,7 +50,9 @@ export const useAudioStore=defineStore('audio',()=>{
         };
 
         if (index === -1) {
-            audioTable.value = audioTable.value.map(updateItem);
+            audioTable.value.forEach((item,index)=>{
+                audioTable.value[index]=updateItem(item)
+            })
         } else {
             audioTable.value[index] = updateItem(audioTable.value[index]);
         }

@@ -58,7 +58,9 @@ export const useVideoStore=defineStore('video',()=>{
         };
 
         if (index === -1) {
-            videoTable.value = videoTable.value.map(updateItem);
+            videoTable.value.forEach((item,index)=>{
+                videoTable.value[index]=updateItem(item)
+            })
         } else {
             videoTable.value[index] = updateItem(videoTable.value[index]);
         }

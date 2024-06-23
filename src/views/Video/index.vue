@@ -51,13 +51,22 @@ const handleRemove: UploadProps['onRemove']=(file, fileList)=>{
   )
 }
 
-const handleDelete=(index:number,row: { title:string,name:string })=>{
+const handleDelete=(index:number,row: { title:string,name:string,exportPath:string })=>{
   if(index===-1){
     videoList.value=[]
+    // 清空播放器
+    audioRef.value.src=null
+    videoTable.forEach((item,index)=>{
+      window.URL.revokeObjectURL(item?.exportPath)
+    })
     videoStore.clearVideoTable()
   }
   else{
     videoList.value=videoList.value.filter(obj=>obj.name!==row.name)
+    if(audioRef.value.src===row.exportPath){
+      audioRef.value.src=null
+    }
+    window.URL.revokeObjectURL(row.exportPath)
     videoStore.deleteRow(index,row)
   }
 }
@@ -66,15 +75,20 @@ const handleDelete=(index:number,row: { title:string,name:string })=>{
 const dialogVideoVisible=ref(false)
 const videoRef=ref()
 const audioRef=ref()
+const videoSrc=ref('')
 const handlePlay=async (index:number,row:{name:string})=>{
   dialogVideoVisible.value=true
   const raw:File=videoList.value.find(obj=>obj.name===row.name)?.raw
   const blob=await new Blob([raw],{type:'video/mp4'})
-  videoRef.value.src=URL.createObjectURL(blob)
+  videoSrc.value=URL.createObjectURL(blob)
+  videoRef.value.src=videoSrc.value
 }
 const handleClose=()=>{
   dialogVideoVisible.value=false
   videoRef.value.pause()
+  videoRef.value.src=null
+  window.URL.revokeObjectURL(videoSrc.value)
+  videoSrc.value=''
 }
 
 // 设置相关

@@ -49,13 +49,21 @@ const handleRemove: UploadProps['onRemove']=(file, fileList)=>{
   )
 }
 
-const handleDelete=(index:number,row: { title:string,name:string })=>{
+const handleDelete=(index:number,row: { title:string,name:string,exportPath:string })=>{
   if(index===-1){
     audioList.value=[]
+    audioRef.value.src=null
+    audioTable.forEach((item,index)=>{
+      window.URL.revokeObjectURL(item.exportPath)
+    })
     audioStore.clearAudioTable()
   }
   else{
     audioList.value=audioList.value.filter(obj=>obj.name!==row.name)
+    if(audioRef.value.src===row.exportPath){
+      audioRef.value.src=null
+    }
+    window.URL.revokeObjectURL(row.exportPath)
     audioStore.deleteRow(index,row)
   }
 }

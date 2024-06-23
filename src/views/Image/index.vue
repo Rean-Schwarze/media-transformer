@@ -70,13 +70,19 @@ const handleRemove: UploadProps['onRemove']=(file, fileList)=>{
   )
 }
 
-const handleDelete=(index:number,row: { title:string,name:string })=>{
+const handleDelete=(index:number,row: { title:string,name:string,src:string,exportPath:string })=>{
   if(index===-1){
     imageList.value=[]
+    imageTable.forEach((item,index)=>{
+      window.URL.revokeObjectURL(item?.exportPath)
+      window.URL.revokeObjectURL(item?.src)
+    })
     imageStore.clearImageTable()
   }
   else{
     imageList.value=imageList.value.filter(obj=>obj.name!==row.name)
+    window.URL.revokeObjectURL(row.src)
+    window.URL.revokeObjectURL(row.exportPath)
     imageStore.deleteRow(index,row)
   }
 }
@@ -268,11 +274,11 @@ const handleDownload=(index:number,row:{exportPath:string,exportName:string,name
         <el-col :span="11">
 
         </el-col>
-        <el-col :span="3">
-          <el-button size="large" type="info" :icon="Setting" @click="handleConfig(-1,{})">
-            批量设置
-          </el-button>
-        </el-col>
+<!--        <el-col :span="3">-->
+<!--          <el-button size="large" type="info" :icon="Setting" @click="handleConfig(-1,{})">-->
+<!--            批量设置-->
+<!--          </el-button>-->
+<!--        </el-col>-->
         <el-col :span="3">
           <el-button size="large" type="primary" :icon="Position" @click="handleProcess(-1,{})">
             批量处理
@@ -360,8 +366,10 @@ const handleDownload=(index:number,row:{exportPath:string,exportName:string,name
   </el-dialog>
 
   <!--    图片预览的dialog-->
-  <el-dialog v-model="dialogPreviewVisible" title="图片预览" width="1000px" style="margin-top: 80px; -webkit-app-region:no-drag;">
-    <img class="preview-image" :src="dialogImageUrl" alt="Preview Image" />
+  <el-dialog v-model="dialogPreviewVisible" title="图片预览" width="1000px" class="image-dialog">
+    <div class="dialog-content">
+      <img :src="dialogImageUrl" alt="Preview Image" />
+    </div>
   </el-dialog>
 
 </template>
@@ -398,9 +406,18 @@ const handleDownload=(index:number,row:{exportPath:string,exportName:string,name
     margin:auto;
   }
 
-  .preview-image{
-    margin:auto;
-    display: inline-flex;
+  .dialog-content{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%; /* 使其占满父容器的高度 */
+    -webkit-app-region:no-drag;
+  }
+
+  .dialog-content img{
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* 保持图片比例 */
   }
 }
 

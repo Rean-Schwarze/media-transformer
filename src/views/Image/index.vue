@@ -366,7 +366,7 @@ const handleDownload=(index:number,row:{exportPath:string,exportName:string,name
   </el-dialog>
 
   <!--    图片预览的dialog-->
-  <el-dialog v-model="dialogPreviewVisible" title="图片预览" width="1000px" class="image-dialog">
+  <el-dialog v-model="dialogPreviewVisible" title="图片预览" width="1000px" style="-webkit-app-region:no-drag;">
     <div class="dialog-content">
       <img :src="dialogImageUrl" alt="Preview Image" />
     </div>

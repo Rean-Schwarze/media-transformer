@@ -17,7 +17,7 @@ const videoList=ref<UploadUserFile[]>([])
 const videoStore=useVideoStore()
 const videoTable=videoStore.videoTable
 
-const allowedFileTypes = ['video/mp4', 'video/quicktime', 'video/x-matroska'];
+const allowedFileTypes = ['video/mp4', 'video/quicktime', 'video/x-matroska', 'video/vnd.dlna.mpeg-tts'];
 
 const ffmpegStore=useFFMpegStore()
 const ffmpeg=ffmpegStore.ffmpeg
@@ -28,13 +28,8 @@ onMounted(()=>videoStore.clearVideoTable())
 const videoUpload=(uploadFile: UploadFile, uploadFiles: UploadFiles)=>{
   let type=uploadFile.raw?.type.split('/')[1]
   if (!allowedFileTypes.includes(uploadFile.raw?.type!)) {
-    if(uploadFile.raw?.name.split('.')[-1]!=='flv'){
-      uploadRef.value!.handleRemove(uploadFile);
-      return
-    }
-    else{
-      type='flv'
-    }
+    uploadRef.value!.handleRemove(uploadFile);
+    return
   }
   videoStore.addVideoTable(<string>uploadFile.raw?.name,<string>type)
 }
@@ -244,6 +239,13 @@ const handleConfig=(index:number,row:{exportFormat:string,mode:string,bit:any,re
     selectedOption.value.crf=row.crf
   }
 }
+
+// 选中输出格式变化时触发
+const handleFormatChange=()=>{
+  if(selectedOption.value.exportFormat==='aac'){
+    selectedOption.value.mode=''  // 清空转换模式
+  }
+}
 const handleConfirm=()=>{
   videoStore.setOptions(selectedIndex.value,selectedOption.value)
   dialogConfigVisible.value=false
@@ -371,7 +373,7 @@ const handleDownload=(index:number,row:{exportPath:string,exportName:string})=>{
     <el-upload
         class="upload" ref="uploadRef"
         drag multiple
-        accept=".mp4, .mov, .flv, .mkv"
+        accept=".mp4, .mov, .mkv, .ts"
         :on-change="videoUpload"
         :on-remove="handleRemove"
         :limit="10"
@@ -455,7 +457,7 @@ const handleDownload=(index:number,row:{exportPath:string,exportName:string})=>{
       <el-text style="display:inline-flex; width:80px; padding-left: 15px;">
         输出格式
       </el-text>
-      <el-select v-model="selectedOption.exportFormat" placeholder="输出格式" size="large" style="width:200px; padding-left: 25px;">
+      <el-select v-model="selectedOption.exportFormat" placeholder="输出格式" size="large" style="width:200px; padding-left: 25px;" @change="handleFormatChange">
         <el-option v-for="item in formatOptions" :key="item.value" :label="item.label" :value="item.value" />
       </el-select>
     </div>

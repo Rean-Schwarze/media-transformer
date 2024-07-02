@@ -146,7 +146,7 @@ const sizeOption=[
 
 const frameOption=[
   {
-    value:'',
+    value:'-1',
     label:'与源相同'
   },
   {
@@ -241,9 +241,13 @@ const handleConfig=(index:number,row:{exportFormat:string,mode:string,bit:any,re
 }
 
 // 选中输出格式变化时触发
-const handleFormatChange=()=>{
+const handleConfigChange=()=>{
   if(selectedOption.value.exportFormat==='aac'){
     selectedOption.value.mode=''  // 清空转换模式
+    selectedOption.value.transcodeMode=''
+  }
+  if(selectedOption.value.mode==='transmux'){
+    selectedOption.value.transcodeMode=''
   }
 }
 const handleConfirm=()=>{
@@ -256,7 +260,7 @@ const startProcess=async (index:number,row:{name:string, exportFormat:string,mod
   const raw:File=videoList.value.find(obj=>obj.name===row.name)?.raw
   await ffmpeg.writeFile(row.name, await fetchFile(raw))
   const exportFormat=row.exportFormat
-  const exportName=row.name.split('.')[0]+'_processed.'+exportFormat
+  const exportName=row.name.split('.')[0]+'.'+exportFormat
   let type=''
   // 抽取音频
   if(exportFormat==='aac'){
@@ -281,7 +285,7 @@ const startProcess=async (index:number,row:{name:string, exportFormat:string,mod
       }
 
       let ffOption=['-i',row.name]
-      if(row.frame!==''){
+      if(row.frame!=='-1'){
         ffOption.push('-r',row.frame)
       }
       if(row.resolution!=''){
@@ -457,7 +461,7 @@ const handleDownload=(index:number,row:{exportPath:string,exportName:string})=>{
       <el-text style="display:inline-flex; width:80px; padding-left: 15px;">
         输出格式
       </el-text>
-      <el-select v-model="selectedOption.exportFormat" placeholder="输出格式" size="large" style="width:200px; padding-left: 25px;" @change="handleFormatChange">
+      <el-select v-model="selectedOption.exportFormat" placeholder="输出格式" size="large" style="width:200px; padding-left: 25px;" @change="handleConfigChange">
         <el-option v-for="item in formatOptions" :key="item.value" :label="item.label" :value="item.value" />
       </el-select>
     </div>
@@ -465,7 +469,7 @@ const handleDownload=(index:number,row:{exportPath:string,exportName:string})=>{
       <el-text style="display:inline-flex; width:80px; padding-left: 15px;">
         转换模式
       </el-text>
-      <el-select v-model="selectedOption.mode" placeholder="转换模式" size="large" style="width:200px; padding-left: 25px;">
+      <el-select v-model="selectedOption.mode" placeholder="转换模式" size="large" style="width:200px; padding-left: 25px;" @change="handleConfigChange">
         <el-option v-for="item in modeOption" :key="item.value" :label="item.label" :value="item.value" />
       </el-select>
     </div>
@@ -497,13 +501,13 @@ const handleDownload=(index:number,row:{exportPath:string,exportName:string})=>{
       <el-text style="display:inline-flex; width:80px; padding-left: 15px;">
         预设
       </el-text>
-      <el-select v-model="selectedOption.preset" placeholder="预设" size="large" style="width:200px; padding-left: 25px;">
+      <el-select v-model="selectedOption.preset" placeholder="预设" size="large" style="width:200px; padding-left: 25px;" placement="right">
         <el-option v-for="item in presetOption" :key="item.value" :label="item.label" :value="item.value" />
       </el-select>
     </div>
     <div :class="selectedOption.transcodeMode==='-crf'?'dialog-row-slider':'dialog-row-hidden'">
       <el-text style="display:inline-flex; width:80px; padding-left: 15px;">
-        crf
+        crf：{{selectedOption.crf}}
       </el-text>
       <el-slider v-model="selectedOption.crf" :step=1 :min=18 :max=28 style="padding-left:25px; width:200px;"/>
     </div>

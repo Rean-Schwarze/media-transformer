@@ -410,7 +410,7 @@ const handleDownload=(index:number,row:{exportPath:string,exportName:string})=>{
     </div>
     <div :class="selectedOption.exportFormat==='flac'?'dialog-row-slider':'dialog-row-hidden'">
       <el-text style="display:inline-flex; width:80px; padding-left: 15px;">
-        压缩
+        压缩：{{ selectedOption.compress }}
       </el-text>
       <el-slider v-model="selectedOption.compress" :step=1 :max=8 style="padding-left:25px; width:200px;" />
     </div>

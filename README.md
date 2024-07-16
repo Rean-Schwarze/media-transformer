@@ -6,6 +6,10 @@
 
 ![image-20240702230458765](https://rean-blog-bucket.oss-cn-guangzhou.aliyuncs.com/assets/img/image-20240702230458765.png)
 
+2024/07/16更新：玛雅 这个b我一定要装 确实没想到这个nbcs的选题能拿第1
+
+![image-20240716115542570](https://rean-blog-bucket.oss-cn-guangzhou.aliyuncs.com/assets/img/image-20240716115542570.png)
+
 ------
 
 ## 功能一览
@@ -72,7 +76,7 @@
 
 ## 更新日志
 
-#### 2024/07/02
+### 2024/07/02
 
 #### 新增
 

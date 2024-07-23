@@ -22,7 +22,19 @@ const allowedFileTypes = ['video/mp4', 'video/quicktime', 'video/x-matroska', 'v
 const ffmpegStore=useFFMpegStore()
 const ffmpeg=ffmpegStore.ffmpeg
 
-onMounted(()=>videoStore.clearVideoTable())
+// 全局设置
+const uploadExceed=ref(10)
+const autoPlay=ref(true)
+
+const getSettings=async ()=>{
+  uploadExceed.value = await window.myApi.getSettings('upload-exceed')
+  autoPlay.value = await window.myApi.getSettings('auto-play')
+}
+
+onMounted(()=>{
+  videoStore.clearVideoTable()
+  getSettings()
+})
 
 // 上传相关
 const videoUpload=(uploadFile: UploadFile, uploadFiles: UploadFiles)=>{
@@ -36,7 +48,7 @@ const videoUpload=(uploadFile: UploadFile, uploadFiles: UploadFiles)=>{
 
 const handleExceed: UploadProps['onExceed'] = () => {
   ElMessage.warning(
-      "目前只能上传10个文件，请重试"
+      "目前只能上传"+uploadExceed.value+"个文件，请重试"
   )
 }
 
@@ -325,7 +337,7 @@ const handleProcess=async (index:number,row:{title:string,name:string, sample:st
       await startProcess(index, row)
       videoStore.updateStatus(index,'处理完毕')
       ElMessage.success(row.title+' 转换完成！')
-      if(row.exportFormat==='aac'){
+      if(row.exportFormat==='aac' && autoPlay.value){
         audioRef.value.src=row.exportPath
       }
     }
@@ -380,7 +392,7 @@ const handleDownload=(index:number,row:{exportPath:string,exportName:string})=>{
         accept=".mp4, .mov, .mkv, .ts"
         :on-change="videoUpload"
         :on-remove="handleRemove"
-        :limit="10"
+        :limit="uploadExceed"
         v-model:file-list="videoList"
         :auto-upload="false"
         :on-exceed="handleExceed"

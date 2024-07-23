@@ -23,7 +23,19 @@ const allowedFileTypes = ['audio/mpeg', 'audio/wav', 'audio/flac', 'audio/x-m4a'
 const ffmpegStore=useFFMpegStore()
 const ffmpeg=ffmpegStore.ffmpeg
 
-onMounted(()=>audioStore.clearAudioTable())
+// 全局设置
+const uploadExceed=ref(10)
+const autoPlay=ref(true)
+
+const getSettings=async ()=>{
+  uploadExceed.value = await window.myApi.getSettings('upload-exceed')
+  autoPlay.value = await window.myApi.getSettings('auto-play')
+}
+
+onMounted(()=>{
+  audioStore.clearAudioTable()
+  getSettings()
+})
 
 // 上传文件
 const audioUpload=(uploadFile: UploadFile, uploadFiles: UploadFiles)=>{
@@ -39,7 +51,7 @@ const audioUpload=(uploadFile: UploadFile, uploadFiles: UploadFiles)=>{
 
 const handleExceed: UploadProps['onExceed'] = () => {
   ElMessage.warning(
-      "目前只能上传10个文件，请重试"
+      "目前只能上传"+uploadExceed.value+"个文件，请重试"
   )
 }
 
@@ -229,7 +241,9 @@ const handleProcess=async (index:number,row:{title:string,name:string, sample:st
       ElMessage.info(row.title+' 开始转换，请耐心等候！')
       await startProcess(index, row)
       ElMessage.success(row.title+' 转换完成！')
-      audioRef.value.src=row.exportPath
+      if(autoPlay.value){
+        audioRef.value.src=row.exportPath
+      }
     }
   }
 }
@@ -282,7 +296,7 @@ const handleDownload=(index:number,row:{exportPath:string,exportName:string})=>{
         accept=".mp3, .ogg, .wav, .flac, .m4a"
         :on-change="audioUpload"
         :on-remove="handleRemove"
-        :limit="10"
+        :limit="uploadExceed"
         v-model:file-list="audioList"
         :auto-upload="false"
         :on-exceed="handleExceed"

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import {ref, onMounted} from 'vue';
-import {Sunny,Moon, Film, Mic, House, Picture} from '@element-plus/icons-vue';
+import {Sunny,Moon, Film, Mic, House, Picture, Setting} from '@element-plus/icons-vue';
 import PubSub from 'pubsub-js'
 
 const isCollapse =ref(false)
@@ -42,6 +42,12 @@ onMounted(()=>handleCollapse())
             <el-icon><Picture/></el-icon>
             <template #title>
               <span>图像压缩/格式转换</span>
+            </template>
+          </el-menu-item>
+          <el-menu-item index="config" style="margin-top: 270px;">
+            <el-icon><Setting /></el-icon>
+            <template #title>
+              <span>设置</span>
             </template>
           </el-menu-item>
         </el-menu>

@@ -18,7 +18,17 @@ const imageTable=imageStore.imageTable
 
 const allowedFileTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/bmp'];
 
-onMounted(()=>imageStore.clearImageTable())
+// 全局设置
+const uploadExceed=ref(10)
+
+const getSettings=async ()=>{
+  uploadExceed.value = await window.myApi.getSettings('upload-exceed')
+}
+
+onMounted(()=>{
+  imageStore.clearImageTable()
+  getSettings()
+})
 
 const getStyle=(row:{width:number,height:number})=> {
   const maxWidth = 180;
@@ -60,7 +70,7 @@ const imageUpload=(uploadFile: UploadFile, uploadFiles: UploadFiles)=>{
 
 const handleExceed: UploadProps['onExceed'] = () => {
   ElMessage.warning(
-      "目前只能上传10个文件，请重试"
+      "目前只能上传"+uploadExceed.value+"个文件，请重试"
   )
 }
 
@@ -251,7 +261,7 @@ const handleDownload=(index:number,row:{exportPath:string,exportName:string,name
         accept=".jpg, .jpeg, .png, .bmp, .webp, .jfif"
         :on-change="imageUpload"
         :on-remove="handleRemove"
-        :limit="10"
+        :limit="uploadExceed"
         v-model:file-list="imageList"
         :auto-upload="false"
         :on-exceed="handleExceed"

@@ -1,6 +1,6 @@
 {
   "name": "media-transformer",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "private": true,
   "scripts": {
     "dev": "vite",
@@ -13,6 +13,7 @@
     "@rollup/plugin-inject": "^5.0.5",
     "@vueuse/core": "^10.9.0",
     "buffer": "^6.0.3",
+    "electron-store": "^10.0.0",
     "element-plus": "^2.6.3",
     "esbuild": "^0.20.2",
     "pinia": "^2.1.7",
@@ -34,7 +35,7 @@
     "@vitejs/plugin-vue": "^5.0.4",
     "@vue/tsconfig": "^0.5.1",
     "@vueuse/electron": "^10.9.0",
-    "electron": "^29.1.6",
+    "electron": "latest",
     "electron-builder": "^24.13.3",
     "electron-builder-squirrel-windows": "^25.0.0-alpha.5",
     "esbuild": "^0.20.2",

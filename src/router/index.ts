@@ -5,6 +5,7 @@ import Audio from '@/views/Audio/index.vue'
 import Video from '@/views/Video/index.vue'
 import Image from '@/views/Image/index.vue'
 import HomeWelcome from "@/views/Home/components/HomeWelcome.vue";
+import Config from '@/views/Config/index.vue'
 
 const router = createRouter({
   history: createWebHashHistory(),
@@ -32,6 +33,10 @@ const router = createRouter({
             {
               path:'image',
               component: Image,
+            },
+            {
+              path:'config',
+              component: Config,
             }
           ]
         }

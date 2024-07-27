@@ -47,13 +47,11 @@ app.whenReady().then(()=>{
 
     // 获取设置
     ipcMain.handle('get-settings', (event, key) => {
-        console.log(111)
         return store.get(key);
     });
 
     // 存储设置
     ipcMain.handle('set-settings', (event, key, value) => {
-        console.log(222)
         store.set(key, value);
     });
 })
